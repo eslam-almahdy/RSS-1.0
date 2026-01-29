@@ -37,7 +37,23 @@ class RRSDatabase:
     """
     
     def __init__(self, db_path: str = "rrs_enterprise.db"):
-        self.db_path = db_path
+        import os
+        import tempfile
+        
+        # Check if we're on Streamlit Cloud (read-only filesystem)
+        try:
+            # Try to create database in current directory
+            test_file = "test_write.tmp"
+            with open(test_file, 'w') as f:
+                f.write("test")
+            os.remove(test_file)
+            self.db_path = db_path
+        except (OSError, PermissionError):
+            # We're on read-only filesystem (Streamlit Cloud)
+            # Use temporary directory
+            temp_dir = tempfile.gettempdir()
+            self.db_path = os.path.join(temp_dir, db_path)
+        
         self.conn = None
         self.initialize_database()
     
@@ -49,8 +65,9 @@ class RRSDatabase:
     
     def initialize_database(self):
         """Create all required tables"""
-        conn = self.connect()
-        cursor = conn.cursor()
+        try:
+            conn = self.connect()
+            cursor = conn.cursor()
         
         # Users table with authentication
         cursor.execute('''
@@ -269,6 +286,15 @@ class RRSDatabase:
         
         # Create default admin user if not exists
         self.create_default_admin()
+        
+        except Exception as e:
+            print(f"Warning: Database initialization issue: {e}")
+            print("Running in demo mode - data will not persist")
+            try:
+                if conn:
+                    conn.close()
+            except:
+                pass
     
     def hash_password(self, password: str, salt: Optional[str] = None) -> Tuple[str, str]:
         """Hash password with salt"""
@@ -477,25 +503,29 @@ class RRSDatabase:
                   entity_type: str = "", entity_id: str = "",
                   details: str = "", ip_address: str = ""):
         """Log an auditable action"""
-        conn = self.connect()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            INSERT INTO audit_log (user_id, username, action, entity_type, entity_id, details, ip_address, timestamp)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            user_id,
-            username,
-            action,
-            entity_type,
-            entity_id,
-            details,
-            ip_address,
-            datetime.now().isoformat()
-        ))
-        
-        conn.commit()
-        conn.close()
+        try:
+            conn = self.connect()
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO audit_log (user_id, username, action, entity_type, entity_id, details, ip_address, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                user_id,
+                username,
+                action,
+                entity_type,
+                entity_id,
+                details,
+                ip_address,
+                datetime.now().isoformat()
+            ))
+            
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"Warning: Could not write to audit log: {e}")
+            # Don't fail the application if audit logging fails
     
     def store_risk(self, risk_dict: dict, username: str) -> bool:
         """Store or update a risk"""
