@@ -58,10 +58,14 @@ class RRSDatabase:
         self.initialize_database()
     
     def connect(self):
-        """Establish database connection"""
-        self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
-        self.conn.row_factory = sqlite3.Row
-        return self.conn
+        """Establish database connection - returns None if fails"""
+        try:
+            self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
+            self.conn.row_factory = sqlite3.Row
+            return self.conn
+        except Exception as e:
+            print(f"Warning: Database connection failed: {e}")
+            return None
     
     def initialize_database(self):
         """Create all required tables"""
@@ -342,60 +346,76 @@ class RRSDatabase:
         """
         Authenticate user and return user data if successful
         """
-        conn = self.connect()
-        cursor = conn.cursor()
-        
-        # Get user
-        cursor.execute('''
-            SELECT * FROM users WHERE username = ? AND is_active = 1
-        ''', (username,))
-        user = cursor.fetchone()
-        
-        if not user:
-            conn.close()
-            return None
-        
-        # Check if account is locked
-        if user['account_locked']:
-            conn.close()
-            return None
-        
-        # Verify password
-        pwd_hash, _ = self.hash_password(password, user['salt'])
-        
-        if pwd_hash == user['password_hash']:
-            # Successful login
+        try:
+            conn = self.connect()
+            if not conn:
+                return None
+            
+            cursor = conn.cursor()
+            
+            # Get user
             cursor.execute('''
-                UPDATE users 
-                SET last_login = ?, failed_login_attempts = 0 
-                WHERE user_id = ?
-            ''', (datetime.now().isoformat(), user['user_id']))
+                SELECT * FROM users WHERE username = ? AND is_active = 1
+            ''', (username,))
+            user = cursor.fetchone()
             
-            # Log login
-            self.log_audit(
-                user['user_id'],
-                username,
-                AuditAction.LOGIN.value,
-                details="Successful login"
-            )
+            if not user:
+                conn.close()
+                return None
             
-            conn.commit()
-            conn.close()
+            # Check if account is locked
+            if user['account_locked']:
+                conn.close()
+                return None
             
-            return dict(user)
-        else:
-            # Failed login
-            attempts = user['failed_login_attempts'] + 1
-            locked = 1 if attempts >= 5 else 0
+            # Verify password
+            pwd_hash, _ = self.hash_password(password, user['salt'])
             
-            cursor.execute('''
-                UPDATE users 
-                SET failed_login_attempts = ?, account_locked = ?
-                WHERE user_id = ?
-            ''', (attempts, locked, user['user_id']))
-            
-            conn.commit()
-            conn.close()
+            if pwd_hash == user['password_hash']:
+                # Successful login
+                try:
+                    cursor.execute('''
+                        UPDATE users 
+                        SET last_login = ?, failed_login_attempts = 0 
+                        WHERE user_id = ?
+                    ''', (datetime.now().isoformat(), user['user_id']))
+                    
+                    # Log login
+                    self.log_audit(
+                        user['user_id'],
+                        username,
+                        AuditAction.LOGIN.value,
+                        details="Successful login"
+                    )
+                    
+                    conn.commit()
+                except:
+                    pass  # Don't fail authentication if logging fails
+                    
+                conn.close()
+                
+                return dict(user)
+            else:
+                # Failed login
+                attempts = user['failed_login_attempts'] + 1
+                locked = 1 if attempts >= 5 else 0
+                
+                try:
+                    cursor.execute('''
+                        UPDATE users 
+                        SET failed_login_attempts = ?, account_locked = ?
+                        WHERE user_id = ?
+                    ''', (attempts, locked, user['user_id']))
+                    
+                    conn.commit()
+                except:
+                    pass  # Don't fail if logging fails
+                    
+                conn.close()
+                return None
+                
+        except Exception as e:
+            print(f"Authentication error: {e}")
             return None
     
     def create_session(self, user_id: int, ip_address: str = "", user_agent: str = "") -> str:
@@ -502,9 +522,12 @@ class RRSDatabase:
     def log_audit(self, user_id: Optional[int], username: str, action: str,
                   entity_type: str = "", entity_id: str = "",
                   details: str = "", ip_address: str = ""):
-        """Log an auditable action"""
+        """Log an auditable action - fails silently if database unavailable"""
         try:
             conn = self.connect()
+            if not conn:
+                return  # Silently skip if no connection
+            
             cursor = conn.cursor()
             
             cursor.execute('''
@@ -524,8 +547,8 @@ class RRSDatabase:
             conn.commit()
             conn.close()
         except Exception as e:
-            print(f"Warning: Could not write to audit log: {e}")
-            # Don't fail the application if audit logging fails
+            # Completely silent - don't even print errors in production
+            pass
     
     def store_risk(self, risk_dict: dict, username: str) -> bool:
         """Store or update a risk"""
