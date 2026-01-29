@@ -1,0 +1,42 @@
+XERGY BANNER IMAGE SETUP INSTRUCTIONS
+=====================================
+
+Facebook-Style Banner Background
+---------------------------------
+
+The login page now features a wide banner background behind the title, similar to Facebook cover photos.
+
+HOW IT WORKS:
+- Automatically detects "xergy_banner.png" in the Desktop folder
+- If image exists: Uses it as background at 50% opacity
+- If no image: Uses purple gradient fallback (looks great!)
+- Banner is 1200px wide × 180px tall (responsive on mobile)
+- Only appears on LOGIN PAGE (not on dashboard pages)
+
+TO ADD YOUR CUSTOM BANNER IMAGE:
+1. Create or find a professional banner image
+2. Recommended size: 1200px × 300px (wide aspect ratio)
+3. Save as: xergy_banner.png
+4. Place in: C:\Users\marku\Desktop\
+5. Restart the app to see your custom banner
+
+IMAGE REQUIREMENTS:
+- Format: PNG or JPG (PNG recommended for transparency)
+- Dimensions: 1200×300px ideal (minimum 800×200px)
+- Content: Professional imagery, abstract patterns, or corporate branding
+- Colors: Should complement the XERGY purple theme (#667eea to #764ba2)
+
+DESIGN TIPS:
+- Keep important content in the center (text will overlay)
+- Avoid busy patterns that might reduce title readability
+- Test at 50% opacity to ensure text is visible
+- Consider using brand colors or abstract geometric patterns
+
+CURRENT SETUP:
+- 3D Glowing Logo: Top-right corner (all pages)
+- Background Watermark Logo: Center (5% opacity, login only)
+- Banner Background: Behind title (50% opacity, login only)
+
+All visual elements work together for a professional, eye-catching login experience!
+
+© 2024 XERGY Risk Register Platform
