@@ -68,9 +68,9 @@ class RRSDatabase:
         try:
             conn = self.connect()
             cursor = conn.cursor()
-        
-        # Users table with authentication
-        cursor.execute('''
+            
+            # Users table with authentication
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
@@ -89,8 +89,8 @@ class RRSDatabase:
             )
         ''')
         
-        # Sessions table
-        cursor.execute('''
+            # Sessions table
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS sessions (
                 session_id TEXT PRIMARY KEY,
                 user_id INTEGER NOT NULL,
@@ -103,8 +103,8 @@ class RRSDatabase:
             )
         ''')
         
-        # Risk register table
-        cursor.execute('''
+            # Risk register table
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS risks (
                 risk_id TEXT PRIMARY KEY,
                 risk_name TEXT NOT NULL,
@@ -141,8 +141,8 @@ class RRSDatabase:
             )
         ''')
         
-        # Risk history table (versioning)
-        cursor.execute('''
+            # Risk history table (versioning)
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS risk_history (
                 history_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 risk_id TEXT NOT NULL,
@@ -155,8 +155,8 @@ class RRSDatabase:
             )
         ''')
         
-        # Risk interdependencies table
-        cursor.execute('''
+            # Risk interdependencies table
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS risk_interdependencies (
                 dependency_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 source_risk_id TEXT NOT NULL,
@@ -173,8 +173,8 @@ class RRSDatabase:
             )
         ''')
         
-        # Mitigation actions table
-        cursor.execute('''
+            # Mitigation actions table
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS mitigation_actions (
                 action_id TEXT PRIMARY KEY,
                 risk_id TEXT NOT NULL,
@@ -193,8 +193,8 @@ class RRSDatabase:
             )
         ''')
         
-        # Action history table
-        cursor.execute('''
+            # Action history table
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS action_history (
                 history_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 action_id TEXT NOT NULL,
@@ -209,8 +209,8 @@ class RRSDatabase:
             )
         ''')
         
-        # Questionnaires table
-        cursor.execute('''
+            # Questionnaires table
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS questionnaires (
                 questionnaire_id TEXT PRIMARY KEY,
                 title TEXT NOT NULL,
@@ -224,8 +224,8 @@ class RRSDatabase:
             )
         ''')
         
-        # Questionnaire responses table
-        cursor.execute('''
+            # Questionnaire responses table
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS questionnaire_responses (
                 response_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 questionnaire_id TEXT NOT NULL,
@@ -237,8 +237,8 @@ class RRSDatabase:
             )
         ''')
         
-        # Audit log table
-        cursor.execute('''
+            # Audit log table
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS audit_log (
                 audit_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
@@ -253,8 +253,8 @@ class RRSDatabase:
             )
         ''')
         
-        # Risk appetite settings table
-        cursor.execute('''
+            # Risk appetite settings table
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS risk_appetite (
                 appetite_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 category TEXT NOT NULL,
@@ -268,8 +268,8 @@ class RRSDatabase:
             )
         ''')
         
-        # Reports table
-        cursor.execute('''
+            # Reports table
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS reports (
                 report_id TEXT PRIMARY KEY,
                 report_type TEXT NOT NULL,
@@ -280,18 +280,18 @@ class RRSDatabase:
                 is_archived BOOLEAN DEFAULT 0
             )
         ''')
-        
-        conn.commit()
-        conn.close()
-        
-        # Create default admin user if not exists
-        self.create_default_admin()
-        
+            
+            conn.commit()
+            conn.close()
+            
+            # Create default admin user if not exists
+            self.create_default_admin()
+            
         except Exception as e:
             print(f"Warning: Database initialization issue: {e}")
             print("Running in demo mode - data will not persist")
             try:
-                if conn:
+                if 'conn' in locals():
                     conn.close()
             except:
                 pass
